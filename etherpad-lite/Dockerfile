@@ -1,23 +1,33 @@
-# DOCKER-VERSION 0.4.0
-
 from	ubuntu:12.04
+
+#user	etherpad-lite
 run	echo 'deb http://us.archive.ubuntu.com/ubuntu/ precise universe' >> /etc/apt/sources.list
 run	apt-get -y update
-run	apt-get -y install python-software-properties
-run	add-apt-repository ppa:chris-lea/node.js
+
+# Install supervisord
+run	apt-get -y install supervisor
+run	apt-get -y install python-software-properties mysql-client-5.5
 
 # Install required packages
+run	add-apt-repository ppa:chris-lea/node.js
 run	apt-get -y update
 run	apt-get -y install nodejs git-core curl python libssl-dev pkg-config build-essential
 
 # Install etherpad-lite
 run	mkdir /src
 run	git clone https://github.com/ether/etherpad-lite.git /src/etherpad-lite
-add	./settings.json /src/etherpad-lite/settings.json
 run	/src/etherpad-lite/bin/installDeps.sh
+
+env	ETHERPAD_USER etherpad
+env	ETHERPAD_PASS etherpad
+env	ETHERPAD_DB   etherpad
+env	ADMIN_PW etherpad
+
+add	./etherpad-lite.conf /etc/supervisor/conf.d/etherpad-lite.conf
+add	./run-supervisord /usr/sbin/run-supervisord
+add	./settings.json /src/etherpad-lite/settings.json
 
 expose	:9001
 
-entrypoint	["/src/etherpad-lite/bin/run.sh", "--root"]
-
+cmd	["/usr/sbin/run-supervisord"]
 # vim:ts=8:noet:
